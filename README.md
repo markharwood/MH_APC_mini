@@ -1,5 +1,5 @@
 # MH_APC_mini
-A Midi Remote script for controlling Ableton Live 9 using an APC mini 
+A Midi Remote script for controlling Ableton Live 9 using an APC mini (not tested yet on Live 10)
 
 ## Demo
 See : https://www.youtube.com/watch?v=Nd9lvAHpqTE&feature=youtu.be
