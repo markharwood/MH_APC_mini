@@ -633,12 +633,13 @@ class MH_APC_mini(APC_mini):
                         return
 
                 trackIndex = self.getTrackIndex(note)
+                # self.show_message("trackIndex=" + str(trackIndex))
                 track = song.tracks[trackIndex]
                 clipIndex= self.getClipIndex(note)
                 # self.log_message("armed="+str(track.arm)+" tr="+str(trackIndex)+" clip="+str(clipIndex))
                 clip = track.clip_slots[clipIndex].clip
                 if clip is None:
-                    for t in range(8):
+                    for t in range(len(song.tracks)):
                         track = song.tracks[t]
                         track.arm = (t == trackIndex)
                     # track.arm = True
