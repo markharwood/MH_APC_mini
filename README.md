@@ -8,7 +8,7 @@ Some Awesome Midi Remote scripts for controlling Ableton Live using an APC mini
 * Edit `install.sh` file and make sure that your `ABLETON_HOME` is correct
 * Launch `./install.sh` will copy scripts into your Ableton Live scripts directory
 * Restart Live
-* In the Live->Preferences menu choose the control surface you want as follows: ![](ableton_live_control.jpg)
+* In the Live->Preferences menu choose the control surface you want as follows: ![](ableton_live_control.png)
 
 ## Demo
 
