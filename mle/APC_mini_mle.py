@@ -1,3 +1,4 @@
+# version 2
 from __future__ import with_statement
 from _Framework.Layer import Layer, SimpleLayerOwner
 from _APC.ControlElementUtils import make_slider
@@ -572,6 +573,7 @@ class APC_mini_mle(APC_mini):
             return True
 
         if note == 87 and self.shiftPressed:
+            self.song().tempo = round(self.song().tempo)
             self.song().metronome = not self.song().metronome
             return True
 
