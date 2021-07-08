@@ -1,8 +1,5 @@
-# version 2
+# version 2.2
 from __future__ import with_statement
-from _Framework.Layer import Layer, SimpleLayerOwner
-from _APC.ControlElementUtils import make_slider
-from APC_Key_25.APC_Key_25 import APC_Key_25
 from APC_mini.APC_mini import APC_mini
 import time
 
@@ -10,6 +7,15 @@ NOTE_ON_STATUS = 144
 NOTE_OFF_STATUS = 128
 SHIFT_KEY = 98
 CC_STATUS = 176
+
+VOLUME_KEY = 68
+PAN_KEY = 69
+SEND_KEY = 70
+DEVICE_KEY = 71
+
+BAR_OFF = 0
+BAR_ON = 1
+BAR_BLINK = 2
 
 
 class ModeBase():
@@ -349,7 +355,6 @@ class ShiftedMenuMode(ModeBase):
         return False
 
 
-#   Dev class used to edit letters
 class PaintMode(ModeBase):
     def __init__(self, apc):
         ModeBase.__init__(self, apc)
@@ -525,10 +530,13 @@ class APC_mini_mle(APC_mini):
     shiftPressed = False
     __fixed_record_bar_length = 2
     lastShiftUpMillis = 0
+    firstShiftClickedNote = -1
+    lastShiftClickedNote = -1
 
     def __init__(self, *a, **k):
         super(APC_mini_mle, self).__init__(*a, **k)
         self.set_fixed_record_bar_length(4)
+        self._suppress_send_midi = False
         self.mode = None
         self.rootMenu = ShiftedMenuMode(self)
 
@@ -556,6 +564,28 @@ class APC_mini_mle(APC_mini):
             self.mode.syncLights()
 
         self.lastShiftUpMillis = now
+
+        if self.firstShiftClickedNote >= 0:
+            firstNote = self.firstShiftClickedNote
+            lastNote = self.lastShiftClickedNote
+            self.firstShiftClickedNote = -1
+            self.lastShiftClickedNote = -1
+            fromTrackIndex = self.getTrackIndex(firstNote)
+            fromTrack = song.tracks[fromTrackIndex]
+            fromClipIndex = self.getClipIndex(firstNote)
+            fromClip = fromTrack.clip_slots[fromClipIndex].clip
+            if fromClip is not None:
+                if lastNote < 0:
+                    # Delete first clip
+                    fromTrack.clip_slots[fromClipIndex].delete_clip()
+                else:
+                    # Copy first clicked clip to last (BUT THIS ERRORS!!! HOW TO DO PROGRAMATICALLY??
+                    fromTrack.duplicate_clip_slot(fromClipIndex)
+                    # toTrackIndex = self.getTrackIndex(lastNote)
+                    # toTrack = song.tracks[toTrackIndex]
+                    # toClipIndex = self.getClipIndex(lastNote)
+                    # toTrack.clip_slots[toClipIndex]=fromClip
+
         self.show_message("")
         return False
 
@@ -566,34 +596,55 @@ class APC_mini_mle(APC_mini):
 
         if note == SHIFT_KEY:
             self.shiftPressed = True
-            self.show_message("Shift + row 6 = menu, row 7= undo")
+            self.show_message("Shift + row 6 = metronome, row 7= undo")
 
         if note == 88 and self.shiftPressed:
             song.undo()
             return True
 
         if note == 87 and self.shiftPressed:
-            self.song().tempo = round(self.song().tempo)
-            self.song().metronome = not self.song().metronome
+            song.tempo = round(song.tempo)
+            song.metronome = not song.metronome
             return True
 
         if note < 64:
+            if self.shiftPressed:
+                if self.firstShiftClickedNote < 0:
+                    self.firstShiftClickedNote = note
+                    return True
+                else:
+                    self.lastShiftClickedNote = note
+                    return True
 
             trackIndex = self.getTrackIndex(note)
             track = song.tracks[trackIndex]
             clipIndex = self.getClipIndex(note)
-            clip = track.clip_slots[clipIndex].clip
-            if clip is None:
+            clipSlot = track.clip_slots[clipIndex]
 
-                # Start recording
-                bars = self.fixed_record_bar_length()
-                if bars == 0:
-                    bars = 4
-                beatsPerBar = int(song.signature_numerator)
-                beats = bars * beatsPerBar
+            last_bars = self.fixed_record_bar_length()
+            if last_bars == 0:
+                last_bars = 8
 
-                song.trigger_session_record(beats)
+            bars = last_bars
+            if trackIndex == 0:
+                bars = 1
+            elif trackIndex == 1 or trackIndex == 2:
+                bars = 2
+            elif trackIndex == 3 or trackIndex == 4:
+                bars = 4
+
+            beatsPerBar = int(song.signature_numerator)
+            beats = bars * beatsPerBar
+
+            self.log_message("APC trackIndex...: " + str(trackIndex) + " - " + str(beats))
+
+            if not clipSlot.has_clip and not clipSlot.is_group_slot:
+                track.arm = True
+                clipSlot.fire(beats)
+                self.log_message("APC fired: " + str(beats))
                 return True
+            else:
+                song.session_record = False
 
         return False
 
@@ -610,19 +661,20 @@ class APC_mini_mle(APC_mini):
 
     def receive_midi(self, midi_bytes):
 
+        self.log_message(
+            "APC receive_midi: " + str(midi_bytes[0]) + " - " + str(midi_bytes[1]) + " v:" + str(midi_bytes[2]))
         extra_conf_applied = False
 
-        # When in edit mode redirect incoming midi message to current editor
+        # Custom Modes
         if self.mode is not None:
             self.mode.custom_receive_midi(midi_bytes)
             return
 
-        # if midi_bytes[0] & 240 == NOTE_ON_STATUS or midi_bytes[0] & 240 == NOTE_OFF_STATUS:
+        # Shift released or applied
         if midi_bytes[0] & 240 == NOTE_OFF_STATUS:
             extra_conf_applied = self._releaseShiftMenu(midi_bytes)
-        else:
-            if midi_bytes[0] & 240 == NOTE_ON_STATUS:
-                extra_conf_applied = self._applyShiftMenu(midi_bytes)
+        elif midi_bytes[0] & 240 == NOTE_ON_STATUS:
+            extra_conf_applied = self._applyShiftMenu(midi_bytes)
 
         if not extra_conf_applied:
             super(APC_mini_mle, self).receive_midi(midi_bytes)

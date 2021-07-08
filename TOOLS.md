@@ -10,7 +10,7 @@ Some tools :
 
 
 # TO Debug and see messages:
-# tail -f ~/Library/Preferences/Ableton/Live\ 9.7.1/Log.txt
+# tail -f ~/Library/Preferences/Ableton/Live\ 10.1.35/Log.txt
 
 
 # self.log_message("Starting record")
