@@ -573,18 +573,18 @@ class APC_mini_mle(APC_mini):
             fromTrackIndex = self.getTrackIndex(firstNote)
             fromTrack = song.tracks[fromTrackIndex]
             fromClipIndex = self.getClipIndex(firstNote)
-            fromClip = fromTrack.clip_slots[fromClipIndex].clip
+            fromClipSlot = fromTrack.clip_slots[fromClipIndex]
+            fromClip = fromClipSlot.clip
+            toTrackIndex = self.getTrackIndex(lastNote)
+            toTrack = song.tracks[toTrackIndex]
+            toClipIndex = self.getClipIndex(lastNote)
+            toClipSlot = toTrack.clip_slots[toClipIndex]
             if fromClip is not None:
                 if lastNote < 0:
-                    # Delete first clip
-                    fromTrack.clip_slots[fromClipIndex].delete_clip()
+                    fromClipSlot.delete_clip()
                 else:
-                    # Copy first clicked clip to last (BUT THIS ERRORS!!! HOW TO DO PROGRAMATICALLY??
-                    fromTrack.duplicate_clip_slot(fromClipIndex)
-                    # toTrackIndex = self.getTrackIndex(lastNote)
-                    # toTrack = song.tracks[toTrackIndex]
-                    # toClipIndex = self.getClipIndex(lastNote)
-                    # toTrack.clip_slots[toClipIndex]=fromClip
+                    # fromTrack.duplicate_clip_slot(fromClipIndex)
+                    fromClipSlot.duplicate_clip_to(toClipSlot)
 
         self.show_message("")
         return False
@@ -635,13 +635,10 @@ class APC_mini_mle(APC_mini):
 
             beatsPerBar = int(song.signature_numerator)
             beats = bars * beatsPerBar
-
-            self.log_message("APC trackIndex...: " + str(trackIndex) + " - " + str(beats))
-
+            self.log_message("APC trackIndex: " + str(trackIndex) + " - " + str(beats))
             if not clipSlot.has_clip and not clipSlot.is_group_slot:
                 track.arm = True
                 clipSlot.fire(beats)
-                self.log_message("APC fired: " + str(beats))
                 return True
             else:
                 song.session_record = False
