@@ -535,7 +535,7 @@ class APC_mini_mle(APC_mini):
 
     def __init__(self, *a, **k):
         super(APC_mini_mle, self).__init__(*a, **k)
-        self.set_fixed_record_bar_length(4)
+        self.set_fixed_record_bar_length(8)
         self._suppress_send_midi = False
         self.mode = None
         self.rootMenu = ShiftedMenuMode(self)
