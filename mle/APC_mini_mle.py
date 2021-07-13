@@ -524,9 +524,12 @@ class MetronomeMode(ModeBase):
 
 
 class APC_mini_mle(APC_mini):
+    # @Overridden
     SESSION_HEIGHT = 8
+    # @Overridden
     HAS_TRANSPORT = False
 
+    # Locals :
     shiftPressed = False
     __fixed_record_bar_length = 2
     lastShiftUpMillis = 0
@@ -556,10 +559,9 @@ class APC_mini_mle(APC_mini):
 
         self.shiftPressed = False
 
-        now = int(round(time.time() * 1000))
         # Double tap on shift key = show menu gesture
+        now = int(round(time.time() * 1000))
         if now - self.lastShiftUpMillis < 500:
-            # Now flip mode to edit mode showing root menu
             self.mode = self.rootMenu
             self.mode.syncLights()
 
@@ -575,14 +577,15 @@ class APC_mini_mle(APC_mini):
             fromClipIndex = self.getClipIndex(firstNote)
             fromClipSlot = fromTrack.clip_slots[fromClipIndex]
             fromClip = fromClipSlot.clip
-            toTrackIndex = self.getTrackIndex(lastNote)
-            toTrack = song.tracks[toTrackIndex]
-            toClipIndex = self.getClipIndex(lastNote)
-            toClipSlot = toTrack.clip_slots[toClipIndex]
             if fromClip is not None:
                 if lastNote < 0:
                     fromClipSlot.delete_clip()
                 else:
+                    toTrackIndex = self.getTrackIndex(lastNote)
+                    toTrack = song.tracks[toTrackIndex]
+                    toClipIndex = self.getClipIndex(lastNote)
+                    toClipSlot = toTrack.clip_slots[toClipIndex]
+
                     # fromTrack.duplicate_clip_slot(fromClipIndex)
                     fromClipSlot.duplicate_clip_to(toClipSlot)
 
@@ -645,6 +648,7 @@ class APC_mini_mle(APC_mini):
 
         return False
 
+    # @Overridden
     def _do_send_midi(self, midi_bytes):
         # Override so that when custom mode takes over none of the usual updates (e.g. mouse click on clip on Mac)
         # will cause changes to lights
@@ -656,10 +660,10 @@ class APC_mini_mle(APC_mini):
     def really_do_send_midi(self, midi_bytes):
         super(APC_mini_mle, self)._do_send_midi(midi_bytes)
 
+    # @Overridden
     def receive_midi(self, midi_bytes):
 
-        self.log_message(
-            "APC receive_midi: " + str(midi_bytes[0]) + " - " + str(midi_bytes[1]) + " v:" + str(midi_bytes[2]))
+        self.log_message("APC receive_midi: " + str(midi_bytes))
         extra_conf_applied = False
 
         # Custom Modes
@@ -673,6 +677,7 @@ class APC_mini_mle(APC_mini):
         elif midi_bytes[0] & 240 == NOTE_ON_STATUS:
             extra_conf_applied = self._applyShiftMenu(midi_bytes)
 
+        # Transfer to Parent
         if not extra_conf_applied:
             super(APC_mini_mle, self).receive_midi(midi_bytes)
 
