@@ -1,7 +1,8 @@
-# version 2.2
+# version 2.3
 from __future__ import with_statement
-from APC_mini.APC_mini import APC_mini
+
 import time
+from APC_mini.APC_mini import APC_mini
 
 NOTE_ON_STATUS = 144
 NOTE_OFF_STATUS = 128
@@ -298,6 +299,7 @@ class ModeBase():
 
 
 class ShiftedMenuMode(ModeBase):
+    modeNum = 0
 
     def __init__(self, apc):
         ModeBase.__init__(self, apc)
@@ -531,10 +533,11 @@ class APC_mini_mle(APC_mini):
 
     # Locals :
     shiftPressed = False
-    __fixed_record_bar_length = 2
+    __fixed_record_bar_length = 8
     lastShiftUpMillis = 0
     firstShiftClickedNote = -1
     lastShiftClickedNote = -1
+    noteDoubleClickMillis = 0
 
     def __init__(self, *a, **k):
         super(APC_mini_mle, self).__init__(*a, **k)
@@ -559,7 +562,7 @@ class APC_mini_mle(APC_mini):
 
         self.shiftPressed = False
 
-        # Double tap on shift key = show menu gesture
+        # Double tap on shift key => show advanced menu
         now = int(round(time.time() * 1000))
         if now - self.lastShiftUpMillis < 500:
             self.mode = self.rootMenu
@@ -610,15 +613,34 @@ class APC_mini_mle(APC_mini):
             song.metronome = not song.metronome
             return True
 
+        # Double tap on note key => quantize
+        now = int(round(time.time() * 1000))
         if note < 64:
-            if self.shiftPressed:
-                if self.firstShiftClickedNote < 0:
-                    self.firstShiftClickedNote = note
-                    return True
-                else:
-                    self.lastShiftClickedNote = note
+
+            trackIndex = self.getTrackIndex(note)
+            track = song.tracks[trackIndex]
+            clipIndex = self.getClipIndex(note)
+            clipSlot = track.clip_slots[clipIndex]
+            if now - self.noteDoubleClickMillis < 500:
+                if clipSlot.has_clip and clipSlot.clip.is_midi_clip:
+                    self.log_message("APC quantize with mode 7")
+                    clipSlot.clip.quantize(7, 1)  # 4 or 7 - 4 should be 1/8 + 1/8T; 7 should be 1/16 + 1/16T ?
                     return True
 
+            if clipSlot.has_clip:
+                self.noteDoubleClickMillis = now
+
+        # Catch note selected with Shift
+        if note < 64 and self.shiftPressed:
+            if self.firstShiftClickedNote < 0:
+                self.firstShiftClickedNote = note
+                return True
+            else:
+                self.lastShiftClickedNote = note
+                return True
+
+        # Recording launch on one note
+        if note < 64:
             trackIndex = self.getTrackIndex(note)
             track = song.tracks[trackIndex]
             clipIndex = self.getClipIndex(note)
@@ -628,9 +650,10 @@ class APC_mini_mle(APC_mini):
             if last_bars == 0:
                 last_bars = 8
 
+            # Opinion oriented : fixed track's bars
             bars = last_bars
             if trackIndex == 0:
-                bars = 1
+                bars = 0.5
             elif trackIndex == 1 or trackIndex == 2:
                 bars = 2
             elif trackIndex == 3 or trackIndex == 4:
