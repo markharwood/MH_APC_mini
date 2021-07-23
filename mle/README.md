@@ -2,7 +2,7 @@
 Opinion oriented Midi Remote script for controlling Ableton Live using an APC mini.
 
 This setup chose to fix track bar lengths : 
-- 1st track is forced to 0.5 bar,
+- 1st track is forced to 1 bar,
 - 2nd and 3rd tracks are forced to 2 bars,
 - 4th and 5th tracks are forced to 4 bars;
 - Only last 3 tracks lengths are customisable by menu (default = 8).

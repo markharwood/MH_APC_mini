@@ -653,7 +653,7 @@ class APC_mini_mle(APC_mini):
             # Opinion oriented : fixed track's bars
             bars = last_bars
             if trackIndex == 0:
-                bars = 0.5
+                bars = 1
             elif trackIndex == 1 or trackIndex == 2:
                 bars = 2
             elif trackIndex == 3 or trackIndex == 4:
