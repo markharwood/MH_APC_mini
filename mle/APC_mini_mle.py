@@ -1,8 +1,9 @@
-# version 2.3
-from __future__ import with_statement
-
+from __future__ import with_statement, absolute_import, print_function, unicode_literals
+from builtins import map
 import time
-from APC_mini.APC_mini import APC_mini
+from _Framework.Layer import Layer, SimpleLayerOwner
+from _APC.ControlElementUtils import make_slider
+import APC_Key_25.APC_Key_25 as APC_Key_25
 
 NOTE_ON_STATUS = 144
 NOTE_OFF_STATUS = 128
@@ -17,7 +18,6 @@ DEVICE_KEY = 71
 BAR_OFF = 0
 BAR_ON = 1
 BAR_BLINK = 2
-
 
 class ModeBase():
 
@@ -525,26 +525,61 @@ class MetronomeMode(ModeBase):
         return False
 
 
-class APC_mini_mle(APC_mini):
+#class APC_mini_mle(APC_mini):
+class APC_mini_mle(APC_Key_25):
     # @Overridden
     SESSION_HEIGHT = 8
     # @Overridden
     HAS_TRANSPORT = False
 
+    RECORD_BAR_LENGTH = 4
+
     # Locals :
     shiftPressed = False
-    __fixed_record_bar_length = 8
+    __fixed_record_bar_length = RECORD_BAR_LENGTH
     lastShiftUpMillis = 0
     firstShiftClickedNote = -1
     lastShiftClickedNote = -1
     noteDoubleClickMillis = 0
+    # TODO make mode configurable : 4 or 7 - 4 should be 1/8 + 1/8T; 7 should be 1/16 + 1/16T ?
+    #  2 = 1/8   5= 1/16
+    quantizeMode = 5
+    mode = None
 
+    # @Overridden
     def __init__(self, *a, **k):
-        super(APC_mini_mle, self).__init__(*a, **k)
-        self.set_fixed_record_bar_length(8)
+        #super(APC_mini_mle, self).__init__(*a, **k)
+        (super(APC_mini_mle, self).__init__)(*a, **k)
+        with self.component_guard():
+            self.register_disconnectable(SimpleLayerOwner(layer=Layer(_unused_buttons=(self.wrap_matrix(self._unused_buttons)))))
+
+        self.log_message("MLEV5 in progress")
+        self.set_fixed_record_bar_length(self.RECORD_BAR_LENGTH)
         self._suppress_send_midi = False
         self.mode = None
         self.rootMenu = ShiftedMenuMode(self)
+
+    # @Overridden
+    def _make_stop_all_button(self):
+        return self.make_shifted_button(self._scene_launch_buttons[7])
+
+    # @Overridden
+    def _create_controls(self):
+        super(APC_mini_mle, self)._create_controls()
+        self._unused_buttons = list(map(self.make_shifted_button, self._scene_launch_buttons[5:7]))
+        self._master_volume_control = make_slider(0, 56, name='Master_Volume')
+
+    # @Overridden
+    def _create_mixer(self):
+        mixer = super(APC_mini_mle, self)._create_mixer()
+        mixer.master_strip().layer = Layer(volume_control=(self._master_volume_control))
+        return mixer
+
+    # @Overridden
+    def _product_model_id_byte(self):
+        return 40
+
+    ####
 
     def getTrackIndex(self, note):
         return int(note % 8)
@@ -623,8 +658,8 @@ class APC_mini_mle(APC_mini):
             clipSlot = track.clip_slots[clipIndex]
             if now - self.noteDoubleClickMillis < 500:
                 if clipSlot.has_clip and clipSlot.clip.is_midi_clip:
-                    self.log_message("APC quantize with mode 7")
-                    clipSlot.clip.quantize(7, 1)  # 4 or 7 - 4 should be 1/8 + 1/8T; 7 should be 1/16 + 1/16T ?
+                    self.log_message("APC quantize with mode " + str(self.quantizeMode))
+                    clipSlot.clip.quantize(self.quantizeMode, 1)
                     return True
 
             if clipSlot.has_clip:
@@ -671,7 +706,7 @@ class APC_mini_mle(APC_mini):
 
         return False
 
-    # @Overridden
+    # @Overridden _do_send_midi
     def _do_send_midi(self, midi_bytes):
         # Override so that when custom mode takes over none of the usual updates (e.g. mouse click on clip on Mac)
         # will cause changes to lights
@@ -683,7 +718,7 @@ class APC_mini_mle(APC_mini):
     def really_do_send_midi(self, midi_bytes):
         super(APC_mini_mle, self)._do_send_midi(midi_bytes)
 
-    # @Overridden
+    # @Overridden receive_midi
     def receive_midi(self, midi_bytes):
 
         self.log_message("APC receive_midi: " + str(midi_bytes))

@@ -2,7 +2,10 @@
 
 set -o errexit -o nounset
 
-ABLETON_HOME="/Applications/Ableton Live 10 Lite.app"
+PROJECTS=('mle')
+
+ABLETON_HOME="$HOME/Music/Ableton/User Library"
+ABLETON_MRS="$ABLETON_HOME/Remote Scripts"
 if [ -e "$ABLETON_HOME" ]
 then
   echo "..."
@@ -11,21 +14,34 @@ else
   exit
 fi
 
-ABLETON_MRS="$ABLETON_HOME/Contents/App-Resources/MIDI Remote Scripts"
-
 if [ -e "$ABLETON_MRS" ]
 then
-
-  rm -rf "$ABLETON_MRS/APC_mini_mh/"
-  rm -rf "$ABLETON_MRS/APC_mini_mle/"
-  rm -rf "$ABLETON_MRS/APC_mini_plus/"
-  rm -rf "$ABLETON_MRS/APC_mini_jojo/"
-
-  cp -r mh/ "$ABLETON_MRS/APC_mini_mh/"
-  cp -r mle/ "$ABLETON_MRS/APC_mini_mle/"
-  cp -r plus/ "$ABLETON_MRS/APC_mini_plus/"
-  cp -r jojo/ "$ABLETON_MRS/APC_mini_jojo/"
-
-  echo "Installation done."
+  echo "..."
+else
+  mkdir "$ABLETON_MRS"
 fi
+
+for project in "${PROJECTS[@]}"
+do
+  rm -rf "$project/__pycache__"
+  rm -rf "compiled/$project"
+  mkdir "compiled/$project"
+  python -m compileall "$project"
+
+  if [ -e "$project/__pycache" ]
+  then
+    for filename in $project/__pycache__/*.pyc; do
+      filename_name=$(basename -- "${filename%%.*}")
+      cp "$filename" "./compiled/$project/$filename_name.pyc"
+      #uncompyle6 "./compiled/$project/$filename_name.pyc" > "./compiled/$project/$filename_name.py"
+    done
+  fi
+
+  rm -rf "$ABLETON_MRS/APC_mini_$project"
+  # cp -r "compiled/$project/" "$ABLETON_MRS/APC_mini_$project/"
+  cp -r "$project/" "$ABLETON_MRS/APC_mini_$project/"
+
+done
+
+echo "Installation done."
 
