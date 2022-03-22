@@ -2,7 +2,7 @@
 
 Some Awesome Midi Remote scripts for controlling Ableton Live using an APC mini
 
-## Installation
+## Installation (Ableton Live 11)
 
 * Shut down Live
 * Edit `install.sh` file and make sure that your `ABLETON_HOME` is correct
