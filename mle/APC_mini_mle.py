@@ -657,7 +657,8 @@ class APC_mini_mle(APC_Key_25):
             clipIndex = self.getClipIndex(note)
             clipSlot = track.clip_slots[clipIndex]
             if now - self.noteDoubleClickMillis < 500:
-                if clipSlot.has_clip and clipSlot.clip.is_midi_clip:
+                if clipSlot.has_clip :
+                    # and clipSlot.clip.is_midi_clip
                     self.log_message("APC quantize with mode " + str(self.quantizeMode))
                     clipSlot.clip.quantize(self.quantizeMode, 1)
                     return True
