@@ -1,16 +1,22 @@
-# MH_APC_mini
-A Midi Remote script for controlling Ableton Live 9 or 10 using an APC mini
+# APC_mini X
 
-## Demo
-See : https://www.youtube.com/watch?v=Nd9lvAHpqTE&feature=youtu.be
+Some Awesome Midi Remote scripts for controlling Ableton Live using an APC mini
 
-## Installation
-
-To install this MIDI Remote Script do the following
+## Installation (Ableton Live 11)
 
 * Shut down Live
-* Copy the "MH_APC_mini/scripts" folder to Ableton's Remote scripts directory e.g. using `cp -R scripts "/Applications/Ableton Live 9 Intro.app/Contents/App-Resources/MIDI Remote Scripts/MH_APC_mini"` This should create a new directory "MH_APC_mini" directory with the 2 files `__init__.py` and `MH_APC_mini.py`.
+* Edit `install.sh` file and make sure that your `ABLETON_HOME` is correct
+* Launch `./install.sh` will copy scripts into your Ableton Live scripts directory
 * Restart Live
-* In the Live->Preferences menu configure the control surface as follows:
-* ![
-](Preferences.jpg)
+* In the Live->Preferences menu choose the control surface you want as follows: ![](ableton_live_control.png)
+
+## Demo
+
+| Scripts | Control | In brief | Demo | Thanks to |
+| ------ | ------ | ------ | ------ | ------ |
+| [jojo](./jojo/README.md) | APC Mini JOJO | ? | none | [JOJ0](https://github.com/JOJ0/ableton-live9-remote-scripts/tree/master/APC_mini_jojo)|
+| [mh](./mh/README.md) | APC Mini MH | Live looping (bar, metronome, remove, undo...) | [youtube](https://www.youtube.com/watch?v=Nd9lvAHpqTE&feature=youtu.be) | [markharwood](https://github.com/markharwood/MH_APC_mini) |
+| [plus](./plus/README.md) | APC Mini PLUS | Live looping (bar, metronome, remove, undo...) | [youtube](https://youtu.be/Rrd3BDDvSlc) | [PaulBriere](https://gitlab.com/Paulybri/apc_mini_plus) |
+| [mle](./mle/README.md) | APC Mini MLE | Opinion oriented bar Live looping | None | @mat_cloud |
+
+
